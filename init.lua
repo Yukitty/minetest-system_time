@@ -57,14 +57,14 @@ end
 -- Localize math
 local floor, max, abs, tonumber = math.floor, math.max, math.abs, tonumber
 
--- `system_time()`
+-- `system_time( [multiplier = 1.0] )`
 -- Returns current system clock in Minetest time (range 0 to 24000), DST boolean.
 local system_time
 do
 	local super = os.date
-	function system_time()
+	function system_time(multiplier)
 		local t = super('*t') -- Prefix with ! for UTC.
-		return floor(t.hour * 1000 + t.min / 60 * 1000 + t.sec / 60 * 1000 / 60), t.isdst
+		return floor((t.hour * 1000 + t.min / 60 * 1000 + t.sec / 60 * 1000 / 60) * (multiplier or 1.0)) % 24000, t.isdst
 	end
 end
 
@@ -137,7 +137,7 @@ local function check_clock()
 		-- If time isn't moving anyway, then don't try to adjust it.
 		want_time = now_time
 	else
-		want_time = (system_time() * time_mul) % 24000
+		want_time = system_time(time_mul)
 	end
 
 	local time_speed = get_time_speed()
@@ -153,7 +153,7 @@ local function check_clock()
 		debug('time_speed changed.')
 		time_mul = time_speed
 		if time_mul > 0 then
-			want_time = (system_time() * time_mul) % 24000
+			want_time = system_time(time_mul)
 			set_time(want_time)
 		end
 		catch_up = false
