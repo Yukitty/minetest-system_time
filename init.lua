@@ -130,9 +130,18 @@ local catch_up = false
 -- Adjust time and time_speed as needed.
 -- Returns seconds until next check.
 local function check_clock()
-	local want_time = (system_time() * time_mul) % 24000
 	local now_time = get_time()
+
+	local want_time
+	if time_mul == 0 then
+		-- If time isn't moving anyway, then don't try to adjust it.
+		want_time = now_time
+	else
+		want_time = (system_time() * time_mul) % 24000
+	end
+
 	local time_speed = get_time_speed()
+
 	local time_diff = want_time - now_time
 	if time_diff > 12000 then
 		time_diff = time_diff - 24000
@@ -143,8 +152,10 @@ local function check_clock()
 	if not catch_up and time_speed ~= time_mul or catch_up and time_speed ~= catch_up then
 		debug('time_speed changed.')
 		time_mul = time_speed
-		want_time = (system_time() * time_mul) % 24000
-		set_time(want_time)
+		if time_mul > 0 then
+			want_time = (system_time() * time_mul) % 24000
+			set_time(want_time)
+		end
 		catch_up = false
 		sram:set_string('catch_up', '')
 		sram:set_string('time_speed', '')
