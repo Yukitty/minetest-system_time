@@ -1,4 +1,0 @@
-# This file contains new mod settings displayed in the settings menu.
-
-#    Offset of the day/night cycle relative to the system clock, in millihours (0-23999).
-system_time_offset (System Clock Offset) int 0 0 23999

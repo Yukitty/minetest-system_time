@@ -126,16 +126,16 @@ end
 -- Leave time alone if time_speed is 0, otherwise update time on the first server tick as if time_speed has changed.
 local time_mul = 0
 local catch_up = false
-local time_offset = tonumber(get_setting('system_time_offset')) or 0
+local time_offset = tonumber(get_setting('world_start_time')) or 0
 
 -- Adjust time and time_speed as needed.
 -- Returns seconds until next check.
 local function check_clock()
-	-- First check if the system_time_offset setting has changed and change time accordingly.
+	-- First check if the world_start_time setting has changed and change time accordingly.
 	do
-		local new_offset = tonumber(get_setting('system_time_offset')) or 0
+		local new_offset = tonumber(get_setting('world_start_time')) or 0
 		if time_offset ~= new_offset then
-			debug('system_time_offset changed.')
+			debug('world_start_time changed.')
 			time_offset = new_offset
 			set_time(system_time(time_mul, time_offset))
 			catch_up = false
