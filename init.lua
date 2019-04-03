@@ -144,7 +144,7 @@ local function check_clock()
 
 	local time_diff = want_time - now_time
 	if time_diff > 12000 then
-		time_diff = time_diff - 24000
+		time_diff = 24000 - time_diff
 	end
 	local time_diff_seconds = abs(time_diff) * 3.6 / time_mul
 
