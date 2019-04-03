@@ -57,19 +57,19 @@ end
 -- Localize math
 local floor, max, abs, tonumber = math.floor, math.max, math.abs, tonumber
 
--- `system_time( [multiplier = 1.0] )`
--- Returns current system clock in Minetest time (range 0 to 24000), DST boolean.
+-- `system_time( [multiplier = 1.0], [offset = 0] )`
+-- Returns current system clock in millihours (0-23999), DST boolean.
 local system_time
 do
 	local super = os.date
-	function system_time(multiplier)
+	function system_time(multiplier, offset)
 		local t = super('*t') -- Prefix with ! for UTC.
-		return floor((t.hour * 1000 + t.min / 60 * 1000 + t.sec / 60 * 1000 / 60) * (multiplier or 1.0)) % 24000, t.isdst
+		return (floor((t.hour * 1000 + t.min / 60 * 1000 + t.sec / 60 * 1000 / 60) * (multiplier or 1.0)) + (offset or 0)) % 24000, t.isdst
 	end
 end
 
 -- `get_time()`
--- Returns current Minetest time (range 0 to 24000)
+-- Returns current millihours (0-23999)
 local get_time
 do
 	local super = engine.get_timeofday
@@ -79,7 +79,7 @@ do
 end
 
 -- `set_time(t)`
--- Instantly change to a specific Minetest time (range 0 to 24000)
+-- Instantly set timeofday to a specific millihour (0-23999)
 local set_time
 do
 	local super = engine.set_timeofday
@@ -126,10 +126,42 @@ end
 -- Leave time alone if time_speed is 0, otherwise update time on the first server tick as if time_speed has changed.
 local time_mul = 0
 local catch_up = false
+local time_offset = tonumber(get_setting('system_time_offset')) or 0
 
 -- Adjust time and time_speed as needed.
 -- Returns seconds until next check.
 local function check_clock()
+	-- First check if the system_time_offset setting has changed and change time accordingly.
+	do
+		local new_offset = tonumber(get_setting('system_time_offset')) or 0
+		if time_offset ~= new_offset then
+			debug('system_time_offset changed.')
+			time_offset = new_offset
+			set_time(system_time(time_mul, time_offset))
+			catch_up = false
+			sram:set_string('catch_up', '')
+			sram:set_string('time_speed', '')
+			return LONG_TIME
+		end
+	end
+
+	-- Next check if time_speed has been changed externally (by another mod or server admin). If so, change the time accordingly.
+	do
+		local time_speed = get_time_speed()
+		if not catch_up and time_speed ~= time_mul or catch_up and time_speed ~= catch_up then
+			debug('time_speed changed.')
+			time_mul = time_speed
+			if time_mul > 0 then
+				set_time(system_time(time_mul, time_offset))
+			end
+			catch_up = false
+			sram:set_string('catch_up', '')
+			sram:set_string('time_speed', '')
+			return LONG_TIME
+		end
+	end
+
+	-- Now get the current time and compare it with the time we should be seeing.
 	local now_time = get_time()
 
 	local want_time
@@ -137,30 +169,18 @@ local function check_clock()
 		-- If time isn't moving anyway, then don't try to adjust it.
 		want_time = now_time
 	else
-		want_time = system_time(time_mul)
+		want_time = system_time(time_mul, time_offset)
 	end
 
-	local time_speed = get_time_speed()
-
+	-- time_diff is the difference between the current time and the target time, in a range from -12000 to 12000.
 	local time_diff = want_time - now_time
 	if time_diff > 12000 then
 		time_diff = 24000 - time_diff
 	end
-	local time_diff_seconds = abs(time_diff) * 3.6 / time_mul
 
-	-- If time_speed changes externally, immediately set the new synchronized time.
-	if not catch_up and time_speed ~= time_mul or catch_up and time_speed ~= catch_up then
-		debug('time_speed changed.')
-		time_mul = time_speed
-		if time_mul > 0 then
-			want_time = system_time(time_mul)
-			set_time(want_time)
-		end
-		catch_up = false
-		sram:set_string('catch_up', '')
-		sram:set_string('time_speed', '')
-		return LONG_TIME
-	end
+	-- time_diff_seconds is how many seconds (realtime) of difference between the system time and the game time.
+	-- because millihours themselves are not as granular as seconds in a day, the minimum unit of difference at a time_speed of 1 is 3.6 seconds.
+	local time_diff_seconds = abs(time_diff) * 3.6 / time_mul
 
 	-- If we're adjusting the time, watch carefully to make sure it's going well.
 	if catch_up then
@@ -182,7 +202,7 @@ local function check_clock()
 
 	-- If the time difference is too great, just jump ahead.
 	if abs(time_diff) > 1250 then
-		debug('Big time jump detected (' .. time_diff .. '), correcting it...')
+		debug('Visually significant time jump detected (' .. time_diff .. '), correcting it...')
 		set_time(want_time)
 		catch_up = false
 		sram:set_string('catch_up', '')
