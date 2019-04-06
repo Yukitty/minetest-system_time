@@ -22,7 +22,7 @@ Day/night cycle will be a realtime 24 hour clock synchronized to the server, suc
 /set world_start_time 6000
 ```
 
-Day/night cycle will run hourly, with the start of every hour marked by sunrise, and sunset around the half hour.
+Day/night cycle will run hourly, with the start of every hour marked by sunrise, and sunset around the half hour. This means that if night time is "dangerous" on your server, players will always know whether it is "safe" to log in or not by just looking at their local clock, regardless of what time zone they're in.
 
 ```
 /set time_speed 72
@@ -38,8 +38,7 @@ Using a significantly higher `time_speed` than 144 is not recommended because th
 No mod dependencies.
 Minetest 5.0.0+ only.
 
-Incompatibilities: Will not respect other mods (or server admins) which change the timeofday directly unless `time_speed` is set to 0.
-eg. Beds will not be able to skip the night cycle.
+Incompatibilities: Will not respect other mods (or server admins) which change the timeofday directly unless `time_speed` is set to 0, eg. Beds will not be able to skip the night cycle. A possible workaround is to adjust `world_start_time` instead; this may become an API feature of the mod in future versions.
 
 [Minetest Forums topic](https://forum.minetest.net/viewtopic.php?f=9&t=22444 "[Mod] System Clock Daytime [system_time] - Minetest Forums")
 
