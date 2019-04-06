@@ -42,7 +42,6 @@ Incompatibilities: Will not respect other mods (or server admins) which change t
 
 [Minetest Forums topic](https://forum.minetest.net/viewtopic.php?f=9&t=22444 "[Mod] System Clock Daytime [system_time] - Minetest Forums")
 
-```
 Copyright © 2019 by Yukita Mayako ("JTE") <catgirl@goddess.moe>
 
 This mod is free software; you can redistribute it and/or modify it
@@ -58,4 +57,3 @@ GNU Lesser General Public License for more details.
 You should have received a copy of the GNU Lesser General Public
 License along with this mod.  If not,
 see <https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html>.
-```
